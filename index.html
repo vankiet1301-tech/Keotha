@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trò Chơi Ô Chữ Hóa Học</title>
+    <style>
+        /* Giao diện tổng quan */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            color: #333;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 95%;
+            max-width: 900px;
+            text-align: center;
+            position: relative;
+        }
+
+        h1 { color: #2980b9; text-transform: uppercase; margin-bottom: 5px; }
+        .subtitle { color: #7f8c8d; font-size: 16px; margin-top: 0; margin-bottom: 20px; }
+        
+        .hidden { display: none !important; }
+
+        /* Form nhập liệu */
+        .input-group { margin: 10px 0; }
+        input[type="text"] {
+            padding: 12px;
+            width: 80%;
+            max-width: 300px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: 0.3s;
+        }
+        input[type="text"]:focus { border-color: #3498db; }
+
+        /* Nút bấm */
+        .btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 15px;
+        }
+        .btn:hover { background: #2ecc71; transform: translateY(-2px); }
+
+        /* Khu vực Game */
+        .game-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        /* Thống kê */
+        .stats {
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            background: #ecf0f1;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #c0392b;
+            margin-bottom: 20px;
+        }
+
+        /* Lưới ô chữ */
+        .crossword-board {
+            display: grid;
+            grid-template-columns: repeat(13, 35px);
+            grid-template-rows: repeat(10, 35px);
+            gap: 2px;
+            background: #bdc3c7;
+            padding: 5px;
+            border-radius: 5px;
+            margin: 0 auto;
+        }
+
+        .cell-wrapper {
+            width: 35px;
+            height: 35px;
+            position: relative;
+            background: transparent;
+        }
+
+        .cell-input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-sizing: border-box;
+            background: white;
+            color: #2c3e50;
+            outline: none;
+        }
+        .cell-input:focus { background: #ffeaa7; }
+        .cell-input.correct { background: #55efc4; color: #000; }
+        .cell-input.wrong { background: #fab1a0; color: #d63031; }
+
+        .cell-number {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #333;
+            pointer-events: none;
+        }
+
+        /* Danh sách gợi ý */
+        .clues-container {
+            text-align: left;
+            flex: 1;
+            min-width: 300px;
+        }
+        .clues-box {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #3498db;
+            margin-bottom: 15px;
+        }
+        .clues-box h3 { margin-top: 0; color: #2980b9; }
+        .clue-item { margin-bottom: 10px; font-size: 15px; line-height: 1.4; }
+
+        /* Màn hình kết thúc */
+        #end-screen h2 { color: #e67e22; font-size: 32px; }
+        .summary-box {
+            font-size: 18px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fff3e0;
+            border-radius: 10px;
+            display: inline-block;
+        }
+        .explanation-list {
+            text-align: left;
+            background: #f0f8ff;
+            padding: 20px;
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .exp-item { margin-bottom: 15px; border-bottom: 1px dashed #ccc; padding-bottom: 10px; }
+        .exp-item strong { color: #d35400; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="login-screen">
+        <h1>🎲 Giải Ô Chữ Bảng Tuần Hoàn</h1>
+        <p class="subtitle">Khám phá các quy luật và tính chất hóa học ẩn giấu</p>
+        <div class="input-group">
+            <input type="text" id="playerName" placeholder="Nhập họ và tên học sinh..." required>
+        </div>
+        <div class="input-group">
+            <input type="text" id="playerClass" placeholder="Nhập lớp..." required>
+        </div>
+        <button class="btn" onclick="startGame()">Bắt Đầu Trò Chơi</button>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div class="stats">
+            <span>👤 <span id="display-name"></span> - <span id="display-class"></span></span>
+            <span>⏱ Thời gian: <span id="timer">0</span>s</span>
+        </div>
+        
+        <div class="game-layout">
+            <div>
+                <div class="crossword-board" id="board"></div>
+                <button class="btn" style="margin-top: 20px; width: 100%;" onclick="checkAnswers()">Nộp Bài & Kiểm Tra</button>
+            </div>
+
+            <div class="clues-container">
+                <div class="clues-box">
+                    <h3>Hàng Ngang</h3>
+                    <div class="clue-item"><strong>2.</strong> Tập hợp các nguyên tố mà nguyên tử có cấu hình electron tương tự nhau, được xếp thành cột. (4 chữ cái)</div>
+                    <div class="clue-item"><strong>3.</strong> Dãy các nguyên tố mà nguyên tử của chúng có cùng số lớp electron. (5 chữ cái)</div>
+                    <div class="clue-item"><strong>4.</strong> Đại lượng đặc trưng cho khả năng hút electron của nguyên tử trong liên kết hóa học. (8 chữ cái)</div>
+                    <div class="clue-item"><strong>6.</strong> Tính chất của nguyên tố mà nguyên tử của nó dễ nhường electron để trở thành ion dương. (7 chữ cái)</div>
+                </div>
+                <div class="clues-box">
+                    <h3>Hàng Dọc</h3>
+                    <div class="clue-item"><strong>1.</strong> Tính chất của nguyên tố mà nguyên tử của nó dễ nhận electron để trở thành ion âm. (6 chữ cái)</div>
+                    <div class="clue-item"><strong>5.</strong> Đại lượng này của nguyên tử giảm dần trong một chu kì và tăng dần trong một nhóm A. (7 chữ cái)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="end-screen" class="hidden">
+        <h2>🎉 Đã Hoàn Thành Ô Chữ!</h2>
+        <div class="summary-box">
+            Điểm số: <strong style="color:#27ae60; font-size:24px;"><span id="final-score">0</span> / 60</strong><br>
+            Thời gian hoàn thành: <strong><span id="final-time">0</span> giây</strong>
+        </div>
+        
+        <h3 style="color:#2980b9; text-align: left; margin-bottom: 5px;">Giải thích đáp án:</h3>
+        <div class="explanation-list">
+            <div class="exp-item"><strong>1. PHIKIM (Tính phi kim):</strong> Đặc trưng cho khả năng nhận electron. Trong 1 chu kì theo chiều tăng điện tích hạt nhân, tính phi kim tăng dần.</div>
+            <div class="exp-item"><strong>2. NHOM (Nhóm):</strong> Gồm các nguyên tố cùng cột, có cấu hình electron lớp ngoài cùng giống nhau nên tính chất hóa học tương tự nhau.</div>
+            <div class="exp-item"><strong>3. CHUKI (Chu kì):</strong> Gồm các nguyên tố cùng hàng, có cùng số lớp electron. Số thứ tự chu kì = Số lớp electron.</div>
+            <div class="exp-item"><strong>4. DOAMDIEN (Độ âm điện):</strong> Đặc trưng cho khả năng hút e. Độ âm điện càng lớn, tính phi kim càng mạnh.</div>
+            <div class="exp-item"><strong>5. BANKINH (Bán kính nguyên tử):</strong> Phụ thuộc vào số lớp e và sức hút của hạt nhân. Trong chu kì R giảm, trong nhóm R tăng.</div>
+            <div class="exp-item"><strong>6. KIMLOAI (Tính kim loại):</strong> Đặc trưng cho khả năng nhường electron. Càng dễ nhường e, tính kim loại càng mạnh.</div>
+        </div>
+        
+        <button class="btn" onclick="location.reload()">Chơi Lại</button>
+    </div>
+</div>
+
+<script>
+    // Dữ liệu ma trận ô chữ (Giao nhau hoàn hảo)
+    const words = [
+        { id: 1, dir: 'down', r: 0, c: 3, text: 'PHIKIM' },
+        { id: 2, dir: 'across', r: 1, c: 2, text: 'NHOM' },      // Giao chữ H tại (1,3)
+        { id: 3, dir: 'across', r: 3, c: 0, text: 'CHUKI' },     // Giao chữ K tại (3,3)
+        { id: 4, dir: 'across', r: 5, c: 0, text: 'DOAMDIEN' },  // Giao chữ M tại (5,3)
+        { id: 5, dir: 'down', r: 3, c: 7, text: 'BANKINH' },     // Giao chữ N tại (5,7) của W4
+        { id: 6, dir: 'across', r: 7, c: 6, text: 'KIMLOAI' }    // Giao chữ I tại (7,7) của W5
+    ];
+
+    const ROWS = 10;
+    const COLS = 13;
+    let gridMap = {};
+    let startCells = {};
+    let seconds = 0;
+    let timerInterval;
+
+    // Khởi tạo bản đồ lưới
+    words.forEach(w => {
+        startCells[`${w.r},${w.c}`] = w.id;
+        for(let i = 0; i < w.text.length; i++) {
+            let r = w.dir === 'down' ? w.r + i : w.r;
+            let c = w.dir === 'across' ? w.c + i : w.c;
+            
+            if (!gridMap[`${r},${c}`]) {
+                gridMap[`${r},${c}`] = { char: w.text[i], words: [] };
+            }
+            gridMap[`${r},${c}`].words.push(w.id);
+        }
+    });
+
+    function startGame() {
+        const name = document.getElementById('playerName').value.trim();
+        const className = document.getElementById('playerClass').value.trim();
+        if(!name || !className) return alert("Vui lòng nhập đầy đủ thông tin!");
+
+        document.getElementById('display-name').innerText = name;
+        document.getElementById('display-class').innerText = className;
+        
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+
+        renderBoard();
+
+        timerInterval = setInterval(() => {
+            seconds++;
+            document.getElementById('timer').innerText = seconds;
+        }, 1000);
+    }
+
+    function renderBoard() {
+        const board = document.getElementById('board');
+        board.innerHTML = '';
+
+        for(let r = 0; r < ROWS; r++) {
+            for(let c = 0; c < COLS; c++) {
+                const key = `${r},${c}`;
+                const wrapper = document.createElement('div');
+                wrapper.className = 'cell-wrapper';
+
+                if (gridMap[key]) {
+                    // Ô có chữ
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.maxLength = 1;
+                    input.className = 'cell-input';
+                    input.dataset.r = r;
+                    input.dataset.c = c;
+                    input.dataset.expected = gridMap[key].char;
+                    
+                    wrapper.appendChild(input);
+
+                    // Đánh số thứ tự đầu từ
+                    if (startCells[key]) {
+                        const num = document.createElement('span');
+                        num.className = 'cell-number';
+                        num.innerText = startCells[key];
+                        wrapper.appendChild(num);
+                    }
+                }
+                board.appendChild(wrapper);
+            }
+        }
+    }
+
+    function checkAnswers() {
+        clearInterval(timerInterval);
+        
+        let correctWordsCount = 0;
+        const inputs = document.querySelectorAll('.cell-input');
+        
+        // Chấm điểm theo từng ô chữ cái để đánh dấu màu
+        inputs.forEach(input => {
+            const userVal = input.value.toUpperCase();
+            const expectedVal = input.dataset.expected;
+            input.disabled = true; // Khóa không cho nhập nữa
+
+            if (userVal === expectedVal) {
+                input.classList.add('correct');
+            } else {
+                input.classList.add('wrong');
+                input.value = expectedVal; // Hiển thị đáp án đúng
+            }
+        });
+
+        // Chấm điểm theo TỪ (Mỗi từ đúng hoàn toàn = 10 điểm)
+        words.forEach(w => {
+            let isWordCorrect = true;
+            for(let i = 0; i < w.text.length; i++) {
+                let r = w.dir === 'down' ? w.r + i : w.r;
+                let c = w.dir === 'across' ? w.c + i : w.c;
+                let input = document.querySelector(`input[data-r="${r}"][data-c="${c}"]`);
+                if (!input || !input.classList.contains('correct')) {
+                    isWordCorrect = false;
+                    break;
+                }
+            }
+            if (isWordCorrect) correctWordsCount++;
+        });
+
+        const totalScore = correctWordsCount * 10;
+
+        // Chuyển sang màn hình kết thúc sau 2 giây để HS kịp nhìn màu trên bảng
+        setTimeout(() => {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+            
+            document.getElementById('final-score').innerText = totalScore;
+            document.getElementById('final-time').innerText = seconds;
+        }, 2000);
+    }
+</script>
+</body>
+</html>
